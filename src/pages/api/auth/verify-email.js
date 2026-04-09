@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import crypto from 'crypto';
 import { getUserByEmail, updateUser } from "../../../utils/userDbStore";
+import { getAppBaseUrl } from "../../../utils/appBaseUrl";
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -35,7 +36,7 @@ export default async function handler(req, res) {
     });
 
     // Enviar correo
-    await sendVerificationEmail(email, verificationToken);
+    await sendVerificationEmail(email, verificationToken, getAppBaseUrl(req));
 
     return res.status(200).json({ message: 'Correo de verificación enviado' });
   } catch (error) {
@@ -44,7 +45,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function sendVerificationEmail(email, token) {
+async function sendVerificationEmail(email, token, baseUrl) {
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_SERVER_HOST,
     port: process.env.EMAIL_SERVER_PORT,
@@ -55,7 +56,7 @@ async function sendVerificationEmail(email, token) {
     secure: process.env.EMAIL_SERVER_SECURE === 'true'
   });
 
-  const verificationUrl = `${process.env.NEXTAUTH_URL}/auth/verify?token=${token}`;
+  const verificationUrl = `${baseUrl}/auth/verify?token=${token}`;
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,

@@ -1,9 +1,10 @@
 import nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 import { getUserByEmail, updateUser } from '../../../utils/userDbStore';
+import { getAppBaseUrl } from '../../../utils/appBaseUrl';
 
 // Función para enviar correo de verificación
-async function sendVerificationEmail(email, name, token) {
+async function sendVerificationEmail(email, name, token, baseUrl) {
   // Configurar el transportador de correo
   const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -13,8 +14,6 @@ async function sendVerificationEmail(email, name, token) {
     },
   });
 
-  // URL base para el enlace de verificación
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
   const verificationUrl = `${baseUrl}/auth/verify?token=${token}`;
 
   // Plantilla de correo HTML
@@ -66,6 +65,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    const baseUrl = getAppBaseUrl(req);
     const { email } = req.body;
 
     if (!email) {
@@ -100,7 +100,7 @@ export default async function handler(req, res) {
     }
 
     // Enviar correo de verificación
-    const emailSent = await sendVerificationEmail(email, user.name, newToken);
+    const emailSent = await sendVerificationEmail(email, user.name, newToken, baseUrl);
 
     if (!emailSent) {
       return res.status(500).json({ error: 'Error al enviar el correo de verificación' });

@@ -1,9 +1,10 @@
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import { getUserByEmail, updateUser } from '../../../utils/userDbStore';
+import { getAppBaseUrl } from '../../../utils/appBaseUrl';
 
 // Función para enviar correo de recuperación de contraseña
-async function sendPasswordResetEmail(email, name, token) {
+async function sendPasswordResetEmail(email, name, token, baseUrl) {
   try {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -13,7 +14,6 @@ async function sendPasswordResetEmail(email, name, token) {
       },
     });
 
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const resetUrl = `${baseUrl}/auth/reset-password?token=${token}`;
 
     const mailHtml = `
@@ -60,6 +60,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    const baseUrl = getAppBaseUrl(req);
     const { email } = req.body;
 
     if (!email) {
@@ -89,7 +90,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Error al generar el token de recuperación' });
     }
 
-    const emailSent = await sendPasswordResetEmail(email, user.name, resetToken);
+    const emailSent = await sendPasswordResetEmail(email, user.name, resetToken, baseUrl);
 
     if (!emailSent) {
       return res.status(500).json({ error: 'Error al enviar el correo de recuperación' });

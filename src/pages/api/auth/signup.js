@@ -3,6 +3,7 @@ import { getUserByEmail, addUser } from '../../../utils/userDbStore';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import { getAppBaseUrl } from '../../../utils/appBaseUrl';
 
 // Función para generar un ID único
 function generateUniqueId() {
@@ -17,7 +18,7 @@ function generateVerificationToken() {
 }
 
 // Función para enviar correo de verificación
-async function sendVerificationEmail(email, name, token) {
+async function sendVerificationEmail(email, name, token, baseUrl) {
   try {
     // Configurar transporte de correo (Gmail)
     const transporter = nodemailer.createTransport({
@@ -27,9 +28,6 @@ async function sendVerificationEmail(email, name, token) {
         pass: process.env.EMAIL_PASSWORD
       }
     });
-
-    // URL base de la aplicación
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
     // URL de verificación
     const verificationUrl = `${baseUrl}/auth/verify?token=${token}`;
@@ -80,6 +78,7 @@ const handler = async (req, res) => {
   }
 
   try {
+    const baseUrl = getAppBaseUrl(req);
     // Aplicar headers de seguridad
     securityHeaders(res);
 
@@ -158,7 +157,7 @@ const handler = async (req, res) => {
     const createdUser = await addUser(newUser);
 
     // Enviar correo de verificación
-    await sendVerificationEmail(sanitizedData.email, sanitizedData.name, verificationToken);
+    await sendVerificationEmail(sanitizedData.email, sanitizedData.name, verificationToken, baseUrl);
 
     // Responder con éxito, excluyendo la contraseña
     return res.status(201).json({

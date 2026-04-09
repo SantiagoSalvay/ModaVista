@@ -22,11 +22,7 @@ const nextConfig = {
   poweredByHeader: false,
   // Solo aplicar configuración de export cuando se solicite explícitamente.
   exportPathMap: undefined,
-  trailingSlash: false,
-  // Configuración específica para deployment
-  env: {
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-  }
+  trailingSlash: false
 }
 
 module.exports = nextConfig

@@ -15,7 +15,7 @@
     "db:pull": "prisma db pull --force",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
-    "predeploy": "next build",
+    "predeploy": "cross-env NEXT_OUTPUT_MODE=export next build",
     "deploy": "gh-pages -d out"
   },
   "dependencies": {

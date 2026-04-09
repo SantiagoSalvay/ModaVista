@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
+const isStaticExport = process.env.NEXT_OUTPUT_MODE === 'export'
+
 const nextConfig = {
   reactStrictMode: true,
-  output: 'export',
+  ...(isStaticExport ? { output: 'export' } : {}),
   images: {
     remotePatterns: [
       {
@@ -18,7 +20,7 @@ const nextConfig = {
   // Configuración optimizada para producción
   experimental: {},
   poweredByHeader: false,
-  // Deshabilitar SSG para rutas problemáticas
+  // Solo aplicar configuración de export cuando se solicite explícitamente.
   exportPathMap: undefined,
   trailingSlash: false,
   // Configuración específica para deployment

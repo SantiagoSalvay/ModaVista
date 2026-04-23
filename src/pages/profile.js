@@ -25,8 +25,23 @@ export default function ProfilePage() {
         router.push('/login');
         return;
       }
-      
-      setUserData(session.user);
+
+      // Cargar datos frescos desde la API para no depender solo de la sesión cacheada
+      try {
+        const userResponse = await axios.get('/api/user/get-user-data');
+        if (userResponse.data?.success) {
+          const apiUser = userResponse.data.user || userResponse.data.userData;
+          setUserData({
+            ...session.user,
+            ...apiUser
+          });
+        } else {
+          setUserData(session.user);
+        }
+      } catch (error) {
+        console.error('Error al cargar datos frescos del usuario:', error);
+        setUserData(session.user);
+      }
       
       // Si hay un parámetro view en la URL, activar esa pestaña
       if (view) {
@@ -229,6 +244,10 @@ export default function ProfilePage() {
                         <div>
                           <p className="text-sm text-gray-500">Email</p>
                           <p className="font-medium">{userData?.email}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Telefono</p>
+                          <p className="font-medium">{userData?.phone || '-'}</p>
                         </div>
                       </div>
                     </div>

@@ -63,11 +63,7 @@ const PaymentReceiptUploader = ({ orderId, paymentMethod, onUploadSuccess, onErr
       const formData = new FormData();
       formData.append('receipt', file);
       
-      const uploadResponse = await axios.post('/api/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const uploadResponse = await axios.post('/api/upload', formData);
       
       console.log('Respuesta de la API de upload:', uploadResponse.data);
       
@@ -75,7 +71,10 @@ const PaymentReceiptUploader = ({ orderId, paymentMethod, onUploadSuccess, onErr
         throw new Error(uploadResponse.data.message || 'Error al subir el archivo');
       }
       
-      const filePath = uploadResponse.data.filePath;
+      const filePath = uploadResponse.data.filePath || uploadResponse.data.url;
+      if (!filePath) {
+        throw new Error('La respuesta del servidor no incluye la ruta del archivo');
+      }
       console.log('Archivo subido correctamente, path:', filePath);
       
       // 2. Guardar el comprobante en la base de datos

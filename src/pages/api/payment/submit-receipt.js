@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import { getOrderById, updateOrderStatus } from '../../../utils/supabaseDb';
+import { supabaseAdmin } from '../../../utils/supabase';
 import { withAuth } from '../../../middleware/auth';
 
 const handler = async (req, res) => {
@@ -35,21 +36,34 @@ const handler = async (req, res) => {
       });
     }
 
-    // Actualizar la orden con la imagen del recibo
-    const updatedOrder = await updateOrderStatus(orderId, 'pending', 'submitted');
-    
-    // También podríamos actualizar el campo receipt_image si está en el esquema
-    // const { data, error } = await supabaseAdmin
-    //   .from('orders')
-    //   .update({ receipt_image: receiptImage })
-    //   .eq('id', orderId)
+    // Guardar comprobante y mantener estado de pago en pendiente para revisión admin
+    const { data: receiptUpdatedOrder, error: receiptUpdateError } = await supabaseAdmin
+      .from('orders')
+      .update({
+        receipt_image: receiptImage,
+        payment_status: 'pending',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+      .select('*')
+      .single();
+
+    if (receiptUpdateError) {
+      throw receiptUpdateError;
+    }
+
+    // Normalizar también el estado general de la orden
+    const updatedOrder = await updateOrderStatus(orderId, 'pending', 'pending');
     
     console.log(`📄 Recibo enviado para orden ${orderId}`);
     
     return res.status(200).json({
       success: true,
       message: 'Recibo enviado exitosamente',
-      order: updatedOrder
+      order: {
+        ...updatedOrder,
+        ...(receiptUpdatedOrder || {})
+      }
     });
     
   } catch (error) {

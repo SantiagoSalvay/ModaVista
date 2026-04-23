@@ -102,7 +102,11 @@ function AdminOrders() {
   };
   
   const handleViewReceipt = (receipt) => {
-    setSelectedReceipt(receipt);
+    const normalizedReceipt = typeof receipt === 'string'
+      ? { receipt_image: receipt, upload_date: new Date().toISOString(), verification_status: 'pending' }
+      : receipt;
+
+    setSelectedReceipt(normalizedReceipt);
     setIsReceiptModalOpen(true);
   };
   
@@ -368,9 +372,9 @@ function AdminOrders() {
                         >
                           <FiEye size={18} />
                         </button>
-                        {order.receipt && (
+                        {order.receipt_image && (
                           <button 
-                            onClick={() => handleViewReceipt(order.receipt)} 
+                            onClick={() => handleViewReceipt(order.receipt_image)} 
                             className="text-green-500 hover:text-green-700"
                             title="Ver comprobante"
                           >
@@ -524,11 +528,11 @@ function AdminOrders() {
                      selectedOrder.payment_method === 'paypal' ? 'PayPal' : 'Tarjeta'}
                   </p>
                 </div>
-                {selectedOrder.receipt && (
+                {selectedOrder.receipt_image && (
                   <div>
                     <p className="text-sm text-gray-500">Comprobante:</p>
                     <button 
-                      onClick={() => handleViewReceipt(selectedOrder.receipt)}
+                      onClick={() => handleViewReceipt(selectedOrder.receipt_image)}
                       className="text-blue-500 hover:text-blue-700 flex items-center"
                     >
                       <FiImage className="mr-1" /> Ver comprobante
@@ -553,7 +557,7 @@ function AdminOrders() {
                 <FiTruck className="mr-1" /> Actualizar Estado
               </button>
               
-              {selectedOrder.payment_status === 'pending' && selectedOrder.receipt && (
+              {selectedOrder.payment_status === 'pending' && selectedOrder.receipt_image && (
                 <>
                   <button
                     onClick={() => verifyPayment(selectedOrder.id)}

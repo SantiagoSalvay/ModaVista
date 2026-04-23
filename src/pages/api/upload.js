@@ -6,8 +6,8 @@ import { authOptions } from "./auth/[...nextauth]";
 import crypto from 'crypto';
 
 // Whitelist de extensiones y tipos MIME permitidos
-const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.pdf'];
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
 
 export const config = {
   api: {
@@ -45,8 +45,21 @@ export default async function handler(req, res) {
     return new Promise((resolve) => {
       form.parse(req, async (err, fields, files) => {
         if (err) {
-          console.error('Error al procesar el archivo');
-          res.status(500).json({ error: 'Error al procesar el archivo' });
+          console.error('Error al procesar el archivo:', err?.message);
+          if (err?.code === 1009 || (err?.message || '').toLowerCase().includes('maxfilesize')) {
+            res.status(400).json({
+              success: false,
+              error: 'El archivo supera el tamaño máximo permitido (5MB)',
+              message: 'El archivo supera el tamaño máximo permitido (5MB)'
+            });
+            return resolve();
+          }
+
+          res.status(400).json({
+            success: false,
+            error: 'Error al procesar el archivo',
+            message: 'Error al procesar el archivo'
+          });
           return resolve();
         }
 
@@ -55,7 +68,11 @@ export default async function handler(req, res) {
           const file = files[fileField]?.[0] || files[fileField];
 
           if (!file) {
-            res.status(400).json({ error: 'No se ha subido ningún archivo' });
+            res.status(400).json({
+              success: false,
+              error: 'No se ha subido ningún archivo',
+              message: 'No se ha subido ningún archivo'
+            });
             return resolve();
           }
 
@@ -63,7 +80,11 @@ export default async function handler(req, res) {
           const ext = path.extname(file.originalFilename).toLowerCase();
           if (!ALLOWED_EXTENSIONS.includes(ext)) {
             await fs.unlink(file.filepath); // Borrar archivo temporal
-            res.status(400).json({ error: 'Extensión de archivo no permitida' });
+            res.status(400).json({
+              success: false,
+              error: 'Extensión de archivo no permitida',
+              message: 'Extensión de archivo no permitida'
+            });
             return resolve();
           }
 
@@ -71,7 +92,11 @@ export default async function handler(req, res) {
           const mimeType = file.mimetype;
           if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
             await fs.unlink(file.filepath);
-            res.status(400).json({ error: 'Tipo de archivo no válido' });
+            res.status(400).json({
+              success: false,
+              error: 'Tipo de archivo no válido',
+              message: 'Tipo de archivo no válido'
+            });
             return resolve();
           }
 
@@ -88,19 +113,28 @@ export default async function handler(req, res) {
 
           res.status(200).json({
             url: fileUrl,
+            filePath: fileUrl,
             success: true
           });
 
           return resolve();
         } catch (error) {
-          console.error('Error al guardar el archivo');
-          res.status(500).json({ error: 'Error al guardar el archivo' });
+          console.error('Error al guardar el archivo:', error?.message);
+          res.status(500).json({
+            success: false,
+            error: 'Error al guardar el archivo',
+            message: 'Error al guardar el archivo'
+          });
           return resolve();
         }
       });
     });
   } catch (error) {
-    console.error('Error en el servidor');
-    res.status(500).json({ error: 'Error en el servidor' });
+    console.error('Error en el servidor:', error?.message);
+    res.status(500).json({
+      success: false,
+      error: 'Error en el servidor',
+      message: 'Error en el servidor'
+    });
   }
 }

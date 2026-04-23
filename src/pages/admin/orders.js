@@ -101,9 +101,14 @@ function AdminOrders() {
     setIsViewModalOpen(true);
   };
   
-  const handleViewReceipt = (receipt) => {
+  const handleViewReceipt = (receipt, orderId = null) => {
     const normalizedReceipt = typeof receipt === 'string'
-      ? { receipt_image: receipt, upload_date: new Date().toISOString(), verification_status: 'pending' }
+      ? {
+          order_id: orderId,
+          receipt_image: receipt,
+          upload_date: new Date().toISOString(),
+          verification_status: 'pending'
+        }
       : receipt;
 
     setSelectedReceipt(normalizedReceipt);
@@ -374,7 +379,7 @@ function AdminOrders() {
                         </button>
                         {order.receipt_image && (
                           <button 
-                            onClick={() => handleViewReceipt(order.receipt_image)} 
+                            onClick={() => handleViewReceipt(order.receipt_image, order.id)} 
                             className="text-green-500 hover:text-green-700"
                             title="Ver comprobante"
                           >
@@ -453,20 +458,20 @@ function AdminOrders() {
               <h3 className="text-lg font-medium mb-2">Información del Cliente</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500">Nombre:</p>
-                  <p className="font-medium">{selectedOrder.name}</p>
+                  <p className="text-sm text-gray-500">Nombre y apellido:</p>
+                  <p className="font-medium">{selectedOrder.name || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Email:</p>
-                  <p className="font-medium">{selectedOrder.email}</p>
+                  <p className="font-medium">{selectedOrder.email || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Teléfono:</p>
-                  <p className="font-medium">{selectedOrder.phone}</p>
+                  <p className="font-medium">{selectedOrder.phone || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Dirección:</p>
-                  <p className="font-medium">{selectedOrder.address}, {selectedOrder.city}, {selectedOrder.state} {selectedOrder.postal_code}</p>
+                  <p className="font-medium">{selectedOrder.address || '-'}, {selectedOrder.city || '-'}, {selectedOrder.state || '-'} {selectedOrder.postal_code || '-'}</p>
                 </div>
               </div>
             </div>
@@ -532,7 +537,7 @@ function AdminOrders() {
                   <div>
                     <p className="text-sm text-gray-500">Comprobante:</p>
                     <button 
-                      onClick={() => handleViewReceipt(selectedOrder.receipt_image)}
+                      onClick={() => handleViewReceipt(selectedOrder.receipt_image, selectedOrder.id)}
                       className="text-blue-500 hover:text-blue-700 flex items-center"
                     >
                       <FiImage className="mr-1" /> Ver comprobante

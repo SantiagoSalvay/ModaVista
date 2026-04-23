@@ -12,10 +12,34 @@ const handler = async (req, res) => {
     
     // Obtener todas las órdenes usando Supabase
     const ordersResult = await getAllOrders();
+
+    const normalizedOrders = (ordersResult || []).map((order) => {
+      const shipping = order.shipping_address || {};
+
+      return {
+        ...order,
+        // Datos cliente
+        name: shipping.name || order?.users?.name || order.name || '',
+        email: shipping.email || order?.users?.email || order.email || '',
+        phone: shipping.phone || order.phone || '',
+
+        // Datos de envío (compatibilidad snake/camel)
+        address: shipping.address || order.address || '',
+        city: shipping.city || order.city || '',
+        state: shipping.state || order.state || '',
+        postal_code: shipping.postal_code || shipping.postalCode || order.postal_code || order.postalCode || '',
+
+        // Items siempre como arreglo
+        items: Array.isArray(order.items) ? order.items : [],
+
+        // Comprobante
+        receipt_image: order.receipt_image || null,
+      };
+    });
     
     return res.status(200).json({
       success: true,
-      orders: ordersResult || []
+      orders: normalizedOrders
     });
     
   } catch (error) {

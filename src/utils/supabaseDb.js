@@ -357,3 +357,170 @@ export const query = async (table, operation, data = null, filters = {}) => {
     handleSupabaseError(error, `query ${operation} on ${table}`)
   }
 }
+
+// PRODUCTOS
+const mapDbProductToFrontend = (product) => {
+  if (!product) return null
+
+  return {
+    id: product.id,
+    name: product.name,
+    description: product.description || '',
+    price: Number(product.price),
+    category: product.category || 'Sin categoria',
+    image: product.image_url || '',
+    imageUrl: product.image_url || '',
+    stock: product.stock ?? 0,
+    isFeatured: Boolean(product.is_featured),
+    rating: 5,
+    sizes: [],
+    currency: 'ARS'
+  }
+}
+
+export const getAllProducts = async () => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) handleSupabaseError(error, 'getAllProducts')
+    return (data || []).map(mapDbProductToFrontend)
+  } catch (error) {
+    handleSupabaseError(error, 'getAllProducts')
+  }
+}
+
+export const getProductById = async (id) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error && error.code !== 'PGRST116') {
+      handleSupabaseError(error, 'getProductById')
+    }
+
+    return mapDbProductToFrontend(data)
+  } catch (error) {
+    handleSupabaseError(error, 'getProductById')
+  }
+}
+
+export const productIdExists = async (id) => {
+  try {
+    const { count, error } = await supabaseAdmin
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('id', id)
+
+    if (error) handleSupabaseError(error, 'productIdExists')
+    return (count || 0) > 0
+  } catch (error) {
+    handleSupabaseError(error, 'productIdExists')
+  }
+}
+
+export const createProduct = async (productData) => {
+  try {
+    const payload = {
+      name: productData.name,
+      description: productData.description || null,
+      price: Number(productData.price),
+      category: productData.category || null,
+      image_url: productData.image || productData.imageUrl || null,
+      stock: Number.isFinite(productData.stock) ? productData.stock : 0,
+      is_featured: Boolean(productData.isFeatured)
+    }
+
+    if (productData.customId) {
+      payload.id = parseInt(productData.customId, 10)
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .insert([payload])
+      .select('*')
+      .single()
+
+    if (error) handleSupabaseError(error, 'createProduct')
+    return mapDbProductToFrontend(data)
+  } catch (error) {
+    handleSupabaseError(error, 'createProduct')
+  }
+}
+
+export const updateProduct = async (id, productData) => {
+  try {
+    const payload = {
+      name: productData.name,
+      description: productData.description || null,
+      price: Number(productData.price),
+      category: productData.category || null,
+      image_url: productData.image || productData.imageUrl || null,
+      stock: Number.isFinite(productData.stock) ? productData.stock : 0,
+      is_featured: Boolean(productData.isFeatured),
+      updated_at: new Date().toISOString()
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .update(payload)
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    if (error) handleSupabaseError(error, 'updateProduct')
+    return mapDbProductToFrontend(data)
+  } catch (error) {
+    handleSupabaseError(error, 'updateProduct')
+  }
+}
+
+export const deleteProduct = async (id) => {
+  try {
+    const { error } = await supabaseAdmin
+      .from('products')
+      .delete()
+      .eq('id', id)
+
+    if (error) handleSupabaseError(error, 'deleteProduct')
+    return true
+  } catch (error) {
+    handleSupabaseError(error, 'deleteProduct')
+  }
+}
+
+export const setProductFeatured = async (id, isFeatured) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .update({ is_featured: Boolean(isFeatured), updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    if (error) handleSupabaseError(error, 'setProductFeatured')
+    return mapDbProductToFrontend(data)
+  } catch (error) {
+    handleSupabaseError(error, 'setProductFeatured')
+  }
+}
+
+export const getFeaturedProducts = async () => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('is_featured', true)
+      .order('updated_at', { ascending: false })
+
+    if (error) handleSupabaseError(error, 'getFeaturedProducts')
+    return (data || []).map(mapDbProductToFrontend)
+  } catch (error) {
+    handleSupabaseError(error, 'getFeaturedProducts')
+  }
+}

@@ -10,6 +10,8 @@ import { FiMail, FiLock, FiEye, FiEyeOff, FiUser, FiPhone } from "react-icons/fi
 import PageTransition from "../../components/PageTransition";
 import { toast } from "react-toastify";
 
+const PASSWORD_POLICY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/;
+
 export default function SignUp({ csrfToken }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -32,8 +34,8 @@ export default function SignUp({ csrfToken }) {
     }
 
     let strength = 0;
-    // Longitud mínima
-    if (password.length >= 8) strength += 1;
+    // Longitud mínima estricta
+    if (password.length >= 12) strength += 1;
     // Contiene números
     if (/\d/.test(password)) strength += 1;
     // Contiene letras minúsculas
@@ -55,8 +57,8 @@ export default function SignUp({ csrfToken }) {
       return;
     }
 
-    if (passwordStrength < 3) {
-      setError("La contraseña es demasiado débil");
+    if (!PASSWORD_POLICY_REGEX.test(password)) {
+      setError("La contraseña debe tener al menos 12 caracteres e incluir mayúscula, minúscula, número y símbolo (@$!%*?&)");
       setLoading(false);
       return;
     }
@@ -81,7 +83,8 @@ export default function SignUp({ csrfToken }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Error al registrar usuario");
+        const detailedErrors = Array.isArray(data.errors) ? ` (${data.errors.join(', ')})` : '';
+        throw new Error((data.message || "Error al registrar usuario") + detailedErrors);
       }
 
       // Guardar los datos del usuario en localStorage para usarlos después de la verificación
@@ -320,7 +323,7 @@ export default function SignUp({ csrfToken }) {
                   </button>
                 </div>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Mínimo 6 caracteres
+                  Mínimo 12 caracteres, con mayúscula, minúscula, número y símbolo (@$!%*?&)
                 </p>
               </div>
 

@@ -38,14 +38,36 @@ const UserProfile = () => {
 
   // Protección de ruta y carga de datos iniciales
   useEffect(() => {
+    const loadLatestUserData = async () => {
+      try {
+        const response = await fetch('/api/user/get-user-data');
+        const data = await response.json();
+
+        if (response.ok && data?.success) {
+          const user = data.user || data.userData;
+          setProfileData({
+            name: user?.name || session?.user?.name || '',
+            email: user?.email || session?.user?.email || '',
+            phone: user?.phone || ''
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Error loading latest user data:', error);
+      }
+
+      // Fallback a sesión si falla la API
+      setProfileData({
+        name: session?.user?.name || '',
+        email: session?.user?.email || '',
+        phone: session?.user?.phone || ''
+      });
+    };
+
     if (status === 'unauthenticated') {
       router.replace('/auth/signin');
     } else if (session?.user) {
-      setProfileData({
-        name: session.user.name || '',
-        email: session.user.email || '',
-        phone: session.user.phone || ''
-      });
+      loadLatestUserData();
     }
   }, [status, router, session]);
 
@@ -78,7 +100,9 @@ const UserProfile = () => {
 
       // Actualizar la sesión con los nuevos datos
       await update({
-        ...session,
+        name: profileData.name,
+        email: session.user.email,
+        phone: profileData.phone,
         user: {
           ...session.user,
           name: profileData.name,

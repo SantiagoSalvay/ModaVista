@@ -87,9 +87,9 @@ export const authOptions = {
       }
       // Actualizar token cuando se actualiza la sesión desde el cliente
       if (trigger === "update" && session) {
-        token.name = session.name || token.name;
-        token.email = session.email || token.email;
-        token.phone = session.phone || token.phone;
+        token.name = session?.user?.name || session?.name || token.name;
+        token.email = session?.user?.email || session?.email || token.email;
+        token.phone = session?.user?.phone || session?.phone || token.phone;
       }
       return token;
     },

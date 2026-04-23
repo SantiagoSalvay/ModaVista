@@ -17,7 +17,8 @@ const handler = async (req, res) => {
     
     return res.status(200).json({
       success: true,
-      user: safeUserData
+      user: safeUserData,
+      userData: safeUserData
     });
     
   } catch (error) {

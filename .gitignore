@@ -128,3 +128,5 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .env.example
+/audit_out.json
+/data/

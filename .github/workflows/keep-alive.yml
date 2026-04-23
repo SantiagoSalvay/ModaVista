@@ -1,0 +1,63 @@
+name: Keep Alive
+
+on:
+  schedule:
+    # GitHub Actions allows a minimum schedule of 5 minutes.
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Resolve target URL
+        id: resolve
+        env:
+          KEEP_ALIVE_URL: ${{ secrets.KEEP_ALIVE_URL }}
+          KEEP_ALIVE_URL_VAR: ${{ vars.KEEP_ALIVE_URL }}
+        run: |
+          set -e
+          TARGET=""
+
+          if [ -n "$KEEP_ALIVE_URL" ]; then
+            TARGET="$KEEP_ALIVE_URL"
+          elif [ -n "$KEEP_ALIVE_URL_VAR" ]; then
+            TARGET="$KEEP_ALIVE_URL_VAR"
+          fi
+
+          # Fallback candidates to avoid any manual setup when possible.
+          if [ -z "$TARGET" ]; then
+            for CANDIDATE in \
+              "https://modavista.koyeb.app" \
+              "https://moda-vista.koyeb.app" \
+              "https://modavista-prod.koyeb.app" \
+              "https://modavista-api.koyeb.app"; do
+              if curl -sS -L --max-time 15 --retry 1 --retry-delay 1 "$CANDIDATE" > /dev/null; then
+                TARGET="$CANDIDATE"
+                break
+              fi
+            done
+          fi
+
+          if [ -z "$TARGET" ]; then
+            echo "No reachable URL found. Set KEEP_ALIVE_URL as a GitHub secret or variable."
+            exit 1
+          fi
+
+          echo "target_url=$TARGET" >> "$GITHUB_OUTPUT"
+          echo "Using target: $TARGET"
+
+      - name: Keep service warm (every 2 minutes within this run)
+        env:
+          TARGET_URL: ${{ steps.resolve.outputs.target_url }}
+        run: |
+          set -e
+          for i in 1 2 3; do
+            echo "Ping $i -> $TARGET_URL"
+            curl -sS -L --max-time 20 --retry 2 --retry-delay 2 "$TARGET_URL" > /dev/null
+            if [ "$i" -lt 3 ]; then
+              sleep 120
+            fi
+          done
